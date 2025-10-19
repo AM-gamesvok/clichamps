@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>ClickChamps</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2.2em;
+      margin-bottom: 10px;
+    }
+    #clickCount {
+      font-size: 5em;
+      margin: 20px 0;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+    #clickButton {
+      padding: 20px 60px;
+      font-size: 1.8em;
+      background: #ffcc00;
+      color: #222;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.35);
+      transition: transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #clickButton:active {
+      transform: scale(0.95);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    }
+    #leaderboard {
+      background: rgba(0,0,0,0.25);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 90%;
+      margin-top: 30px;
+    }
+    #leaderboard h2 {
+      font-size: 1.4em;
+      margin-bottom: 15px;
+    }
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 1.1em;
+    }
+    #status {
+      margin-top: 15px;
+      font-size: 0.95em;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <h1>ClickChamps</h1>
+  <div id="clickCount">0</div>
+  <button id="clickButton">KATTINTS!</button>
+  <div id="status">Betöltés...</div>
+
+  <div id="leaderboard">
+    <h2>TOP 10 Ranglista</h2>
+    <div id="rankings">Betöltés...</div>
+  </div>
+
+  <!-- Firebase SDK (compat verzió, mert egy fájlban vagyunk) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <script>
+    // 🔑 Firebase konfiguráció – javítva (szóközök eltávolítva a databaseURL-ből)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAe4mUuUGzVjjtk0NpPIbdUpl3fORrqbQ0",
+      authDomain: "clichamps-640c9.firebaseapp.com",
+      databaseURL: "https://clichamps-640c9-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "clichamps-640c9",
+      storageBucket: "clichamps-640c9.firebasestorage.app",
+      messagingSenderId: "613162442631",
+      appId: "1:613162442631:web:36e12348e633de305e7d22"
+    };
+
+    // --- Firebase inicializálás ---
+    let isOnline = false;
+    let database = null;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      database = firebase.database();
+      isOnline = true;
+      document.getElementById('status').textContent = 'Online • Ranglista aktív';
+    } catch (e) {
+      console.warn('Firebase hiba:', e);
+      document.getElementById('status').textContent = 'Offline • Csak helyi számolás';
+    }
+
+    // Helyi click számláló
+    let clicks = parseInt(localStorage.getItem('clicks')) || 0;
+    const clickCountEl = document.getElementById('clickCount');
+    clickCountEl.textContent = clicks;
+
+    // Játékosnév generálása (egyszer, és elmentjük)
+    function getPlayerName() {
+      let name = localStorage.getItem('playerName');
+      if (!name) {
+        const prefixes = ['Click', 'Tap', 'Boom', 'Zing', 'Ping', 'Snap'];
+        const suffixes = ['Master', 'Hero', 'King', 'Queen', 'Ninja', 'Champ'];
+        name = prefixes[Math.floor(Math.random() * prefixes.length)] +
+               suffixes[Math.floor(Math.random() * suffixes.length)] +
+               Math.floor(Math.random() * 900 + 100);
+        localStorage.setItem('playerName', name);
+      }
+      return name;
+    }
+
+    // Click esemény
+    document.getElementById('clickButton').addEventListener('click', () => {
+      clicks++;
+      clickCountEl.textContent = clicks;
+      localStorage.setItem('clicks', clicks);
+
+      if (isOnline) {
+        const name = getPlayerName();
+        // Atomikusan növeljük a globális számot az adatbázisban
+        database.ref('players/' + name).transaction(current => (current || 0) + 1);
+        loadLeaderboard();
+      }
+    });
+
+    // Ranglista betöltése
+    function loadLeaderboard() {
+      if (!isOnline || !database) return;
+
+      database.ref('players')
+        .orderByValue()
+        .limitToLast(10)
+        .once('value')
+        .then(snapshot => {
+          const data = snapshot.val();
+          const rankingsEl = document.getElementById('rankings');
+          if (!data) {
+            rankingsEl.innerHTML = 'Még nincs eredmény';
+            return;
+          }
+          // Rendezés csökkenő sorrendben
+          const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+          rankingsEl.innerHTML = '';
+          entries.forEach(([name, score], index) => {
+            const div = document.createElement('div');
+            div.className = 'rank-item';
+            div.innerHTML = `<strong>${index + 1}. ${name}</strong> <span>${score}</span>`;
+            rankingsEl.appendChild(div);
+          });
+        })
+        .catch(err => {
+          console.error('Ranglista betöltése sikertelen:', err);
+          document.getElementById('rankings').innerHTML = 'Hiba történt';
+        });
+    }
+
+    // Indításkor betöltjük a ranglistát
+    if (isOnline) {
+      loadLeaderboard();
+    } else {
+      document.getElementById('rankings').innerHTML = 'Nincs internet';
+    }
+  </script>
+</body>
+</html>
