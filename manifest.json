@@ -6,16 +6,15 @@
   "background_color": "#182848",
   "theme_color": "#4b6cb7",
   "description": "Online clicker játék ranglistával!",
-  "icons": [
-    {
-      "src": "/clickchamps/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/clickchamps/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
+ "icons": [
+  {
+    "src": "icon-192.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  },
+  {
+    "src": "icon-512.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  }
+]
