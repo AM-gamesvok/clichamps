@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>ClickChamps</title>
+  <meta name="description" content="Online clicker játék ranglistával!">
+  <link rel="manifest" href="/clickchamps/manifest.json">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
     body {
@@ -80,12 +82,12 @@
     <div id="rankings">Betöltés...</div>
   </div>
 
-  <!-- Firebase SDK (compat verzió, mert egy fájlban vagyunk) -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
-    // 🔑 Firebase konfiguráció – javítva (szóközök eltávolítva a databaseURL-ből)
+    // 🔑 Firebase konfiguráció – javítva (szóközök eltávolítva)
     const firebaseConfig = {
       apiKey: "AIzaSyAe4mUuUGzVjjtk0NpPIbdUpl3fORrqbQ0",
       authDomain: "clichamps-640c9.firebaseapp.com",
@@ -96,7 +98,6 @@
       appId: "1:613162442631:web:36e12348e633de305e7d22"
     };
 
-    // --- Firebase inicializálás ---
     let isOnline = false;
     let database = null;
 
@@ -110,12 +111,10 @@
       document.getElementById('status').textContent = 'Offline • Csak helyi számolás';
     }
 
-    // Helyi click számláló
     let clicks = parseInt(localStorage.getItem('clicks')) || 0;
     const clickCountEl = document.getElementById('clickCount');
     clickCountEl.textContent = clicks;
 
-    // Játékosnév generálása (egyszer, és elmentjük)
     function getPlayerName() {
       let name = localStorage.getItem('playerName');
       if (!name) {
@@ -129,7 +128,6 @@
       return name;
     }
 
-    // Click esemény
     document.getElementById('clickButton').addEventListener('click', () => {
       clicks++;
       clickCountEl.textContent = clicks;
@@ -137,13 +135,11 @@
 
       if (isOnline) {
         const name = getPlayerName();
-        // Atomikusan növeljük a globális számot az adatbázisban
         database.ref('players/' + name).transaction(current => (current || 0) + 1);
         loadLeaderboard();
       }
     });
 
-    // Ranglista betöltése
     function loadLeaderboard() {
       if (!isOnline || !database) return;
 
@@ -158,7 +154,6 @@
             rankingsEl.innerHTML = 'Még nincs eredmény';
             return;
           }
-          // Rendezés csökkenő sorrendben
           const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
           rankingsEl.innerHTML = '';
           entries.forEach(([name, score], index) => {
@@ -169,12 +164,11 @@
           });
         })
         .catch(err => {
-          console.error('Ranglista betöltése sikertelen:', err);
+          console.error('Ranglista hiba:', err);
           document.getElementById('rankings').innerHTML = 'Hiba történt';
         });
     }
 
-    // Indításkor betöltjük a ranglistát
     if (isOnline) {
       loadLeaderboard();
     } else {
