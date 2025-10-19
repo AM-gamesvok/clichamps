@@ -1,20 +1,24 @@
 {
   "name": "ClickChamps",
   "short_name": "ClickChamps",
-  "start_url": "/clickchamps/",
+  "description": "Online clicker game with global leaderboard!",
+  "start_url": "/clichamps/",
+  "scope": "/clichamps/",
   "display": "standalone",
   "background_color": "#182848",
   "theme_color": "#4b6cb7",
-  "description": "Online clicker játék ranglistával!",
- "icons": [
-  {
-    "src": "icon-192.png",
-    "sizes": "192x192",
-    "type": "image/png"
-  },
-  {
-    "src": "icon-512.png",
-    "sizes": "512x512",
-    "type": "image/png"
-  }
-]
+  "orientation": "portrait",
+  "lang": "hu",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
